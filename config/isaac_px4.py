@@ -7,17 +7,20 @@
 """
 
 # Imports to start Isaac Sim from this script
+import sys
 import carb
+import omni
 from omni.isaac.kit import SimulationApp
 
 # Start Isaac Sim's simulation environment
 # Note: this simulation app must be instantiated right after the SimulationApp import, otherwise the simulator will crash
 # as this is the object that will load all the extensions and load the actual simulator.
-simulation_app = SimulationApp({"headless": False})
+simulation_app = SimulationApp({"width": 1280, "height": 720, "sync_loads": True, "headless": False})
 
 # -----------------------------------
 # The actual script should start here
 # -----------------------------------
+
 import omni.timeline
 from omni.isaac.core.world import World
 
@@ -25,10 +28,11 @@ from omni.isaac.core.world import World
 from pegasus.simulator.params import ROBOTS, SIMULATION_ENVIRONMENTS
 from pegasus.simulator.logic.state import State
 from pegasus.simulator.logic.backends.mavlink_backend import MavlinkBackend, MavlinkBackendConfig
+from pegasus.simulator.logic.backends.ros2_backend import ROS2Backend
 from pegasus.simulator.logic.vehicles.multirotor import Multirotor, MultirotorConfig
 from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
+
 # Auxiliary scipy and numpy modules
-import os.path
 from scipy.spatial.transform import Rotation
 
 class PegasusApp:
@@ -36,7 +40,7 @@ class PegasusApp:
     A Template class that serves as an example on how to build a simple Isaac Sim standalone App.
     """
 
-    def __init__(self):
+    def __init__(self, world_usd_path):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
         """
@@ -53,10 +57,10 @@ class PegasusApp:
         self.world = self.pg.world
 
         # Launch one of the worlds provided by NVIDIA
-        self.pg.load_environment(SIMULATION_ENVIRONMENTS["Curved Gridroom"])
+        self.pg.load_environment(SIMULATION_ENVIRONMENTS[sys.argv[1]])
 
         # Create the vehicle
-        # Try to spawn the selected robot in the world to the specified namespace
+        #Try to spawn the selected robot in the world to the specified namespace
         config_multirotor = MultirotorConfig()
         # Create the multirotor configuration
         mavlink_config = MavlinkBackendConfig({
@@ -65,7 +69,7 @@ class PegasusApp:
             "px4_dir": self.pg.px4_path,
             "px4_vehicle_model": self.pg.px4_default_airframe # CHANGE this line to 'iris' if using PX4 version bellow v1.14
         })
-        config_multirotor.backends = [MavlinkBackend(mavlink_config)]
+        config_multirotor.backends = [MavlinkBackend(mavlink_config), ROS2Backend(vehicle_id=1)]
 
         Multirotor(
             "/World/quadrotor",
@@ -103,8 +107,11 @@ class PegasusApp:
 
 def main():
 
+    # Get the world to be launched
+    world_usd_path = sys.argv[1]
+
     # Instantiate the template app
-    pg_app = PegasusApp()
+    pg_app = PegasusApp(world_usd_path)
 
     # Run the application loop
     pg_app.run()

@@ -21,9 +21,11 @@ def generate_launch_description():
     config_dir = DeclareLaunchArgument('config_dir', default_value=files_path, description='The directory where the configuration files are stored')
     config_arg = DeclareLaunchArgument('config', default_value='isaac_px4.py', description='The configuration to be launched by Isaac Sim')
 
+    world = DeclareLaunchArgument('world', default_value='Warehouse', description='The world to be launched by Isaac Sim')
+
     # The process that will launch isaac sim
     process = ExecuteProcess(
-        cmd=[isaac_sim_python, [LaunchConfiguration('config_dir'), '/', LaunchConfiguration('config')]],
+        cmd=[isaac_sim_python, [LaunchConfiguration('config_dir'), '/', LaunchConfiguration('config')], LaunchConfiguration('world')],
         output='screen',
         shell=False,
         cwd=[files_path],
@@ -32,5 +34,6 @@ def generate_launch_description():
     return LaunchDescription([
         config_dir,
         config_arg,
+        world,
         process
     ])
