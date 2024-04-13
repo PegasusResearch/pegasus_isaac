@@ -41,7 +41,7 @@ class PegasusApp:
     A Template class that serves as an example on how to build a simple Isaac Sim standalone App.
     """
 
-    def __init__(self, world_usd_path):
+    def __init__(self, world_usd):
         """
         Method that initializes the PegasusApp and is used to setup the simulation environment.
         """
@@ -58,7 +58,7 @@ class PegasusApp:
         self.world = self.pg.world
 
         # Launch one of the worlds provided by NVIDIA
-        self.pg.load_environment(SIMULATION_ENVIRONMENTS[sys.argv[1]])
+        self.pg.load_environment(SIMULATION_ENVIRONMENTS[world_usd])
 
         # Create the vehicle
         #Try to spawn the selected robot in the world to the specified namespace
@@ -70,13 +70,13 @@ class PegasusApp:
             "px4_dir": self.pg.px4_path,
             "px4_vehicle_model": self.pg.px4_default_airframe # CHANGE this line to 'iris' if using PX4 version bellow v1.14
         })
-        config_multirotor.backends = [MavlinkBackend(mavlink_config), ROS2Backend(vehicle_id=1)]
+        config_multirotor.backends = [MavlinkBackend(mavlink_config), ROS2Backend(vehicle_id=1, config={"namespace": 'drone'})]
 
         # Create camera graph for the existing Camera prim on the Iris model, which can be found 
         # at the prim path `/World/quadrotor/body/Camera`. The camera prim path is the local path from the vehicle's prim path
         # to the camera prim, to which this graph will be connected. All ROS2 topics published by this graph will have 
         # namespace `quadrotor` and frame_id `Camera` followed by the selected camera types (`rgb`, `camera_info`).
-        config_multirotor.graphs = [ROS2Camera("body/Camera", config={"types": ['rgb', 'camera_info']})]
+        config_multirotor.graphs = [ROS2Camera("body/Camera", config={"types": ['rgb', 'camera_info', 'depth_pcl', 'depth'], "namespace": 'drone1', "topic": 'camera', "tf_frame_id": 'map', 'resolution': [640, 480]})]
 
         Multirotor(
             "/World/quadrotor",
@@ -115,10 +115,10 @@ class PegasusApp:
 def main():
 
     # Get the world to be launched
-    world_usd_path = sys.argv[1]
+    world_usd = sys.argv[1]
 
     # Instantiate the template app
-    pg_app = PegasusApp(world_usd_path)
+    pg_app = PegasusApp(world_usd)
 
     # Run the application loop
     pg_app.run()
